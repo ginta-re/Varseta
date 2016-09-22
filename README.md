@@ -48,7 +48,7 @@ Where:
 
 In order to mark the variation sets for any language:
 ```
-python main.py testing/test_data/NOSET/2/ dummy/evaluation_data/GOLD/2/ 0.6 4 str
+python main.py DATA/Swedish_MINGLE_dataset/plain/1 DATA/Swedish_MINGLE_dataset/GOLD/1 0.51 4 str
 ```
 You will need 5 arguments:
 
@@ -60,7 +60,7 @@ You will need 5 arguments:
 
 some examples:
 ```
-python main.py DATA/Childes/plain/Afrikaans/3 DATA/Childes/GOLD/ 0.6 4 str
+python main.py DATA/Childes/plain/German/3 DATA/Childes/GOLD/ 0.6 4 str
 
 python main.py DATA/Swedish_MINGLE_dataset/plain/1 DATA/Swedish_MINGLE_dataset/GOLD/1 0.6 4 ldr
 
