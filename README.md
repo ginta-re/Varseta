@@ -78,3 +78,7 @@ To redirect standard output to a file use > operator:
 ```
 python main.py DATA/Swedish_MINGLE_dataset/plain/2 DATA/Swedish_MINGLE_dataset/GOLD/2 0.6 2 ldr > Swe2_06_2_ldr.txt
 ```
+
+# Cite this work
+
+[Wirén, M., Nilsson Björkenstam, K., Grigonytė, G. and Cortes, E.E., 2016. Longitudinal Studies of Variation Sets in Child-directed Speech. In The 54th Annual Meeting of the Association for Computational Linguistics, Berlin, Germany, August 11, 2016 (pp. 44-52). Association for Computational Linguistics.](https://aclweb.org/anthology/W/W16/W16-1907.pdf)
