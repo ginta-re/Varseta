@@ -34,7 +34,9 @@ class Utterances:
     def _read_sentence(self, line):
         tokens = line.strip().split()
         if tokens:
-            self._utterances.append([tokens[0].decode('utf-8'), tokens[1].decode('utf-8'), " ".join(tokens[3:])])
-                                    
+            try:
+                self._utterances.append([tokens[0].decode('utf-8'), tokens[1].decode('utf-8'), " ".join(tokens[3:])])
+            except:
+                pass
                                     
     
