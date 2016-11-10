@@ -81,4 +81,4 @@ python main.py DATA/Swedish_MINGLE_dataset/plain/2 DATA/Swedish_MINGLE_dataset/G
 
 For citation, use:
 
-[Wirén, M., Nilsson Björkenstam, K., Grigonytė, G. and Cortes, E.E., 2016. Longitudinal Studies of Variation Sets in Child-directed Speech. In The 54th Annual Meeting of the Association for Computational Linguistics, Berlin, Germany, August 11, 2016 (pp. 44-52). Association for Computational Linguistics.](https://aclweb.org/anthology/W/W16/W16-1907.pdf)
+Grigonyte, G. and Nilsson Björkenstam, K. “Language-independent exploration of repetition and variation in longitudinal child-directed speech: A tool and resources”, in Proceedings of the joint workshop on NLP for Computer Assisted Language Learning and NLP for Language Acquisition at SLTC, Umea. Linköping Electronic Conference Proceedings (130) ISBN 978-91-7685-633-8; p 41-51, 2016.
