@@ -134,7 +134,7 @@ class Variations:
 
 						
 					#if it's the last utterance, add any left variation sets
-					if index == len(self.utterances)-1:
+					if index == len(self.utterances)-1 and variationset != []:
 						self._variationsets.append(variationset)
 
 							
@@ -193,7 +193,7 @@ class Variations:
 
 						
 					#if it's the last utterance, add any left variation sets
-					if index == len(self.utterances)-1:
+					if index == len(self.utterances)-1 and variationset != []:
 						self._variationsets.append(variationset)	
 						
 						
