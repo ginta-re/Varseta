@@ -5,6 +5,7 @@ from operator import itemgetter
 from itertools import groupby
 import itertools
 from bs4 import BeautifulSoup
+import sys
 
 class Variations:
     
@@ -51,7 +52,6 @@ class Variations:
 	 # returns: [[utterance, utterance, utterance], [utterance, utterance], ...]
 	 # a single utterance consisting of: [start_time, end_time, utterance_transcription]
     def find_variationsets(self):
-		print self.utterances, len(self.utterances)
 		threshold = 0
 		# previous and current utterance will be compared
 		previous_utterance = ""
@@ -59,126 +59,147 @@ class Variations:
 		
 		# the current variation set is cumulated in here
 		variationset = []
+
+		# the similarity method will be stored here 
+		sim = None
 		
-		
+
 		if self.similarity_method == "ldr":
-			#TODO replace numbers by string representaion of comparison method
-			# Extract INCREMENTAL
-			if self.comparison_mode == 2:
-				for index, utt in enumerate(self.utterances):
-					#intitalization
-					if index == 0:
-						previous_utterance = utt
-						
-					else:
-						current_utterance = utt
-	
-						
-						# create new variation set
-						# previous_utterance[2] --> only look at transcription
-						if self.ldr_sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset == []:
-							variationset.append(previous_utterance)
-							variationset.append(current_utterance)
-							previous_utterance = current_utterance
-						
-						# extend variation set
-						elif self.ldr_sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset != []:
-							variationset.append(current_utterance)
-							previous_utterance = current_utterance
-							
-							
-						# we've either reached an interjection or an end of a variation set
-						elif self.ldr_sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset != []:
-							
-							# look ahead two if there are utterances that belong again to the varset
-							if threshold == 0 and index < len(self.utterances)-2 and (self.ldr_sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value or self.ldr_sim(previous_utterance[2], self.utterances[index+2][2]) > self.similarity_value):
-								threshold +=1
-								variationset.append(current_utterance)
-							
-							# look ahead only one
-							# if threshold is still 0 but only one utterance left or if threshold == 1	
-							elif (threshold == 0 or threshold == 1) and  index < len(self.utterances)-1 and (self.ldr_sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value):
-								threshold += 1
-								variationset.append(current_utterance)
-							
-							# this is the end of the variation set and/or the end of the file
-							else:
-								threshold = 0
-								self._variationsets.append(variationset)
-								variationset = []
-								previous_utterance = current_utterance
-									
-									
-
-						
-						#just read the next line
-						# TODO change into a else statement	
-						elif self.ldr_sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset == []:
-							previous_utterance = current_utterance
-							
-						else:
-							print "This case shouldn't be happening, something went wrong"
-						
-						#if it's the last utterance, add any left variation sets
-						if index == len(self.utterances)-1:
-							self._variationsets.append(variationset)
-
-							
-			# ANCHOR		
-			elif self.comparison_mode == 4:
-				for index, utt in enumerate(self.utterances):
-					#intitalization
-					if index == 0:
-						previous_utterance = utt
+				sim = self.ldr_sim
+			
+		elif self.similarity_method == "str":
+				sim = self.str_sim
+		
+		else:
+			print "similarity method unknown"
+			sys.exit(1)
+		
+		
+		
+		# Extract INCREMENTAL
+		if self.comparison_mode == 2:
+			for index, utt in enumerate(self.utterances):
+				#intitalization
+				if index == 0:
+					previous_utterance = utt
 					
-					else:
-						current_utterance = utt
+				else:
+					current_utterance = utt
+	
+					# create new variation set
+					# previous_utterance[2] --> only look at transcription
+					if sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset == []:
+						variationset.append(previous_utterance)
+						variationset.append(current_utterance)
+						previous_utterance = current_utterance
 						
-						# new variation set
-						if self.ldr_sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset == []:
-							variationset.append(previous_utterance)
+					# extend variation set
+					elif sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset != []:
+						variationset.append(current_utterance)
+						previous_utterance = current_utterance
+						
+							
+					# we've either reached an interjection or an end of a variation set
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset != []:
+							
+						# look ahead two if there are utterances that belong again to the varset
+						if threshold == 0 and index < len(self.utterances)-2 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value or sim(previous_utterance[2], self.utterances[index+2][2]) > self.similarity_value):
+							threshold +=1
 							variationset.append(current_utterance)
-							
-						#extend variation set
-						elif self.ldr_sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset != []:
+						
+						# look ahead only one
+						# if threshold is still 0 but only one utterance left or if threshold == 1	
+						elif (threshold == 0 or threshold == 1) and  index < len(self.utterances)-1 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value):
+							threshold += 1
 							variationset.append(current_utterance)
-							
-							
-						# interjection reached
-						elif self.ldr_sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset != []:
-							
-							# look ahead two if there are utterances that belong again to the varset
-							if threshold == 0 and index < len(self.utterances)-2 and (self.ldr_sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value or self.ldr_sim(previous_utterance[2], self.utterances[index+2][2]) > self.similarity_value):
-								threshold +=1
-								variationset.append(current_utterance)
+						
+						# this is the end of the variation set and/or the end of the file
+						else:
+							threshold = 0
+							self._variationsets.append(variationset)
+							variationset = []
+							previous_utterance = current_utterance
 								
-							# look ahead only one
-							# if threshold is still 0 but only one utterance left or if threshold == 1
-							elif (threshold == 0 or threshold == 1) and index < len(self.utterances)-1 and (self.ldr_sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value):
-								threshold += 1
-								variationset.append(current_utterance)
+									
+
+						
+					#just read the next line
+					# TODO change into a else statement	
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset == []:
+						previous_utterance = current_utterance
+						
+					else:
+						print "An utterance has been discovered that is not covered by any of the implemented cases"
+						sys.exit(1)
+
+						
+					#if it's the last utterance, add any left variation sets
+					if index == len(self.utterances)-1:
+						self._variationsets.append(variationset)
+
+							
+		# ANCHOR		
+		elif self.comparison_mode == 4:
+			for index, utt in enumerate(self.utterances):
+				#intitalization
+				if index == 0:
+					previous_utterance = utt
+				
+				else:
+					current_utterance = utt
+					
+					# new variation set
+					if sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset == []:
+						variationset.append(previous_utterance)
+						variationset.append(current_utterance)
+							
+					#extend variation set
+					elif sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset != []:
+						variationset.append(current_utterance)
+						
+													
+					# interjection reached
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset != []:
+							
+						# look ahead two if there are utterances that belong again to the varset
+						if threshold == 0 and index < len(self.utterances)-2 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value or sim(previous_utterance[2], self.utterances[index+2][2]) > self.similarity_value):
+							threshold +=1
+							variationset.append(current_utterance)
+								
+						# look ahead only one
+						# if threshold is still 0 but only one utterance left or if threshold == 1
+						elif (threshold == 0 or threshold == 1) and index < len(self.utterances)-1 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value):
+							threshold += 1
+							variationset.append(current_utterance)
 								
 			
 									
-							# this is the end of the variation set and/or the end of the file
-							else:
-								threshold = 0
-								self._variationsets.append(variationset)
-								variationset = []
-								previous_utterance = current_utterance
+						# this is the end of the variation set and/or the end of the file
+						else:
+							threshold = 0
+							self._variationsets.append(variationset)
+							variationset = []
+							previous_utterance = current_utterance
 								
 						
-						#just read the next line
-						# TODO change into a else statement	
-						elif self.ldr_sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset == []:
-							previous_utterance = current_utterance
-
-						else:
-							print "This case shouldn't be happening, something went wrong"	
+					#just read the next line
+					# TODO change into a else statement	
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset == []:
+						previous_utterance = current_utterance
 						
-						#if it's the last utterance, add any left variation sets
-						if index == len(self.utterances)-1:
-							self._variationsets.append(variationset)						
+					else:
+						print "An utterance has been discovered that is not covered by any of the implemented cases"
+						sys.exit(1)
+
+						
+					#if it's the last utterance, add any left variation sets
+					if index == len(self.utterances)-1:
+						self._variationsets.append(variationset)	
+						
+						
+		else:
+			print "comparison method not known"
+			sys.exit(1)					
 								
 								
 							
