@@ -24,8 +24,13 @@ if __name__ == '__main__':
         for ut in el:
             print ut[0], ut[1], ut[2]
     print "\nSTATS of MARKED VARIATION SETS in Files from: ", sys.argv[1]
-    print "\nnumber of utterenaces: ", len(u._utterances)
+    print "\nnumber of utterances: ", len(u._utterances)
     print "number of variation sets: ", len(varset)
     print "number of utterances in variation sets: ", utterances_in_varset
+    gold_utterances = u._goldutterances
+    gu_length = 0
+    for u in gold_utterances:
+	gu_length += len(u)
+    print "\n\nnumber of gold utterances: ", gu_length
 
-    e = evaluation.Evaluation(varset,u._goldutterances)
+    e = evaluation.Evaluation(varset,gold_utterances)
