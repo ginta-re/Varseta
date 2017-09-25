@@ -29,6 +29,7 @@ if __name__ == '__main__':
     print "number of utterances in variation sets: ", utterances_in_varset
     gold_utterances = u._goldutterances
     gu_length = 0
+    # get the total amount of utterances in variation sets
     for u in gold_utterances:
 	gu_length += len(u)
     print "\n\nnumber of gold utterances: ", gu_length
