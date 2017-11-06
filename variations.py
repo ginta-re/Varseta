@@ -5,25 +5,25 @@ from operator import itemgetter
 from itertools import groupby
 import itertools
 from bs4 import BeautifulSoup
+import sys
 
 class Variations:
     
     def __init__(self, utterances, similarity_value, ngram_mode, similarity_method):
+		# list of utterances: [[start_time, end_time, utterance_transcription], [start_time, end_time, utterance_transcription],...]
         self.utterances = utterances
-        self.chunklen = int(ngram_mode)
+        # comparison modes:
+        # 2 => Incremental
+        # 4 => Anchor
+        self.comparison_mode = int(ngram_mode)
         self.similarity_value = float(similarity_value)
         self.similarity_method = similarity_method
-        self._ngrams = self.find_ngrams() #chunks by 4 utterances
-        self._overlaping_variations = []
-        self.find_similar_utterances()
-        self._variations = []
+        # collects all the variationsets
         self._variationsets = []
+        self.find_variationsets()
 
-    
-    def find_ngrams(self):
-        #cut the bulk of text into ngram utterances, 2 for INCREMENTAL, 4 for ANCHOR
-        return zip(*[self.utterances[i:] for i in range(self.chunklen)])
-    
+
+
     def str_sim(self, s1, s2):
         # python diff-lib similarity
         return (difflib.SequenceMatcher(lambda x: x==' ',s1,s2)).ratio()
@@ -47,67 +47,181 @@ class Variations:
                     d[i, j] = min(d[i-1, j] + 1, d[i, j-1] + 1, d[i-1, j-1] + 1)
         return 1-(d[S1-1, S2-1]/max(S1-1,S2-1))
 
-    def find_similar_utterances(self):
-        #finds 2gram or 4gram similar utterances according to EDR (edit distance) OR STR (diff-lib) similarity measure
-        if self.similarity_method == "ldr":
-            for pair in self._ngrams:
-                try:
-                    #ANCHOR for handiling 4gram stiching (1-2,1-3,1-4)
-                    if self.ldr_sim(pair[0][2],pair[3][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1],pair[2],pair[3]])
-                    elif self.ldr_sim(pair[0][2],pair[2][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1],pair[2]])
-                    elif self.ldr_sim(pair[0][2],pair[1][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1]])
-                except:
-                    pass
-                try:
-                    #INCREMENTAL for handling 2gram stiching (1-2,2-3,3-4)
-                    if len(pair) == 2 and self.ldr_sim(pair[0][2],pair[1][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1]])
-                except:
-                    pass
-        if self.similarity_method == "str":
-            for pair in self._ngrams:
-                try:
-                    #ANCHOR for handiling 4gram stiching (1-2,1-3,1-4)
-                    if self.str_sim(pair[0][2],pair[3][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1],pair[2],pair[3]])
-                    elif self.str_sim(pair[0][2],pair[2][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1],pair[2]])
-                    elif self.str_sim(pair[0][2],pair[1][2]) > self.similarity_value:
-                        self._overlaping_variations.append([pair[0],pair[1]])
-                except:
-                    pass
-                try:
-                    #INCREMENTAL for handling 2gram stiching (1-2,2-3,3-4)
-                    if len(pair) == 2 and self.str_sim(pair[0][2],pair[1][2]) > self.similarity_value:
-                            self._overlaping_variations.append([pair[0],pair[1]])
-                except:
-                    pass
+
+	 #extracts variation sets based on ANCHOR or INCREMENTAL comparison according to EDR (edit distance) OR STR (diff-lib) similarity measure 
+	 # returns: [[utterance, utterance, utterance], [utterance, utterance], ...]
+	 # a single utterance consisting of: [start_time, end_time, utterance_transcription]
+    def find_variationsets(self):
+		threshold = 0
+		# previous and current utterance will be compared
+		previous_utterance = ""
+		current_utterance = ""
+		
+		# the current variation set is cumulated in here
+		variationset = []
+
+		# the similarity method will be stored here 
+		sim = None
+		
+
+		if self.similarity_method == "ldr":
+				sim = self.ldr_sim
+			
+		elif self.similarity_method == "str":
+				sim = self.str_sim
+		
+		else:
+			print "similarity method unknown"
+			sys.exit(1)
+		
+		
+		
+		# Extract INCREMENTAL
+		if self.comparison_mode == 2:
+			for index, utt in enumerate(self.utterances):
+				#intitalization
+				if index == 0:
+					previous_utterance = utt
+					
+				else:
+					current_utterance = utt
+	
+					# create new variation set
+					# previous_utterance[2] --> only look at transcription
+					if sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset == []:
+						variationset.append(previous_utterance)
+						variationset.append(current_utterance)
+						previous_utterance = current_utterance
+						
+					# extend variation set
+					elif sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset != []:
+						variationset.append(current_utterance)
+						previous_utterance = current_utterance
+						
+							
+					# we've either reached an interjection or an end of a variation set
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset != []:
+							
+						# look ahead two if there are utterances that belong again to the varset
+						if threshold == 0 and index < len(self.utterances)-2 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value or sim(previous_utterance[2], self.utterances[index+2][2]) > self.similarity_value):
+							threshold +=1
+							variationset.append(current_utterance)
+						
+						# look ahead only one
+						# if threshold is still 0 but only one utterance left or if threshold == 1	
+						elif (threshold == 0 or threshold == 1) and  index < len(self.utterances)-1 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value):
+							threshold += 1
+							variationset.append(current_utterance)
+						
+						# this is the end of the variation set and/or the end of the file
+						else:
+							threshold = 0
+							self._variationsets.append(variationset)
+							variationset = []
+							previous_utterance = current_utterance
+								
+									
+
+						
+					#just read the next line
+					# TODO change into a else statement	
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset == []:
+						previous_utterance = current_utterance
+						
+					else:
+						print "An utterance has been discovered that is not covered by any of the implemented cases"
+						sys.exit(1)
+
+						
+					#if it's the last utterance, add any left variation sets
+					if index == len(self.utterances)-1 and variationset != []:
+						self._variationsets.append(variationset)
+
+							
+		# ANCHOR		
+		elif self.comparison_mode == 4:
+			for index, utt in enumerate(self.utterances):
+				#intitalization
+				if index == 0:
+					previous_utterance = utt
+				
+				else:
+					current_utterance = utt
+					
+					# new variation set
+					if sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset == []:
+						variationset.append(previous_utterance)
+						variationset.append(current_utterance)
+							
+					#extend variation set
+					elif sim(previous_utterance[2], current_utterance[2]) > self.similarity_value and variationset != []:
+						variationset.append(current_utterance)
+						
+													
+					# interjection reached
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset != []:
+							
+						# look ahead two if there are utterances that belong again to the varset
+						if threshold == 0 and index < len(self.utterances)-2 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value or sim(previous_utterance[2], self.utterances[index+2][2]) > self.similarity_value):
+							threshold +=1
+							variationset.append(current_utterance)
+								
+						# look ahead only one
+						# if threshold is still 0 but only one utterance left or if threshold == 1
+						elif (threshold == 0 or threshold == 1) and index < len(self.utterances)-1 and (sim(previous_utterance[2], self.utterances[index+1][2]) > self.similarity_value):
+							threshold += 1
+							variationset.append(current_utterance)
+								
+			
+									
+						# this is the end of the variation set and/or the end of the file
+						else:
+							threshold = 0
+							self._variationsets.append(variationset)
+							variationset = []
+							previous_utterance = current_utterance
+								
+						
+					#just read the next line
+					# TODO change into a else statement	
+					elif sim(previous_utterance[2], current_utterance[2]) <= self.similarity_value and variationset == []:
+						previous_utterance = current_utterance
+						
+					else:
+						print "An utterance has been discovered that is not covered by any of the implemented cases"
+						sys.exit(1)
+
+						
+					#if it's the last utterance, add any left variation sets
+					if index == len(self.utterances)-1 and variationset != []:
+						self._variationsets.append(variationset)	
+						
+						
+		else:
+			print "comparison method not known"
+			sys.exit(1)					
+								
+								
+							
+						
+							
+							
+
 
 
     def mark_variation_sets(self):
-        #removes 2-4gram overlaping repetitions and glues related ngrams into utterance sets
-        clean_sets=[]
-        for v in self._overlaping_variations:
-            if len(clean_sets)==0:
-                clean_sets.append(v)
-            elif (not clean_sets[-1:][0][1:]==v) and (not clean_sets[-1:][0][2:]==v):
-                clean_sets.append(v)
-        for el in clean_sets:
-            if not self._variations:
-                self._variations.append(el)
-            elif el[0] in self._variations[-1:][0]:
-                temp=self._variations.pop()
-                self._variations.append(list(map(itemgetter(0), groupby(temp+el))))
-            else:
-               self._variations.append(el)
-        #removes duplicates at variation sets level
-        for el in self._variations:
-            el.sort()
-            el = list(el for el,_ in itertools.groupby(el))
-            self._variationsets.append(el)
         return self._variationsets
 
 
+
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		

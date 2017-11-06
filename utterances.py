@@ -27,7 +27,7 @@ class Utterances:
                         tag_link.remove(el)
                 untag_link=[]
                 for el in tag_link:
-                    e=el.split("\t")
+                    e=el.strip().split("\t")
                     untag_link.append([e[0].decode('utf-8'), e[1].decode('utf-8'), e[3].decode('utf-8')])
                 self._goldutterances.append(untag_link)
     
