@@ -21,10 +21,10 @@ class Evaluation:
         p=float(tp/(tp+fp+0.0001))
         r=float(tp/(tp+fn+0.0001))
         f=float(2*(p*r)/(p+r+0.0001))
-        print "\n", "EVALUATION AGAINS THE GOLD STANDARD"
-        print "\n", "true positives:",tp, ", false positives:", fp, ", false negavites:", fn, "from a total of ", len(self.gold_sets), "GOLD variation sets \n"
-        print "Strict match Precision = \t", p
-        print "Strict match Recall = \t", r
+        # print "\n", "EVALUATION AGAINS THE GOLD STANDARD"
+        # print "\n", "true positives:",tp, ", false positives:", fp, ", false negavites:", fn, "from a total of ", len(self.gold_sets), "GOLD variation sets \n"
+        # print "Strict match Precision = \t", p
+        # print "Strict match Recall = \t", r
         print "Strict match F-score = \t", f
     
     
@@ -55,18 +55,16 @@ class Evaluation:
                		if found == True:
                			found = False
                			break 
-                			
-                
-            
             except:
                 pass
+
         fp=l_var-tp
         fn=l_gold-tp
         p=float(tp/(tp+fp+0.0001))
         r=float(tp/(tp+fn+0.0001))
         f=float(2*(p*r)/(p+r+0.0001))
-        print "\n", "true positives:",tp, ", false positives:", fp, ", false negavites:", fn, "from a total of ", l_gold, "GOLD variation sets \n"
-        print "Fuzzy match  Precision = \t", p
-        print "Fuzzy match Recall = \t", r
+        # print "\n", "true positives:",tp, ", false positives:", fp, ", false negavites:", fn, "from a total of ", l_gold, "GOLD variation sets \n"
+        # print "Fuzzy match  Precision = \t", p
+        # print "Fuzzy match Recall = \t", r
         print "Fuzzy match F-score = \t", f
 
