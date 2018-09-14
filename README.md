@@ -1,8 +1,27 @@
 # Varseta
-A python script for extracting Variation sets from child directed speech (CDS) data.
+A python script for extracting Variation sets from child directed speech (CDS) data. Note that this 
 
+## Usage
 
-# Data format
+After cloning the repository, make sure that the data is unzipped if you want to use the gold standard data.
+
+`unzip DATA.zip`
+
+`gunzip -r *` Answer yes to all of the questions.
+
+### Testing Accuracy
+
+`get_accuracy.py` is the main vehicle for testing the accuracy of the various methods.
+
+Here is a very basic example:
+
+`python2.7 get_accuracy.py anch 3 3` Will run the anchor algorithm over a window of 3 with a minimum match of 3.
+
+This runs on all of the Gold Standard data in the folders, which currently is just Swedish and French.
+
+The other option would be to substitute `incr` for `anch`, which would use the incremental method.
+
+## Data format
 
 Files should be prepared in a simple .txt format. 4 tab-separated columns. Child directed speech data example:
 ```
